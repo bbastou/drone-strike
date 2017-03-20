@@ -1,0 +1,106 @@
+<!DOCTYPE>
+<html>
+    <head>
+		<title>United States drone strike</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ammaps/3.13.0/ammap.css" type="text/css" media="all">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ammaps/3.13.0/ammap.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/ammaps/3.13.0/maps/js/worldLow.js" ></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/ammaps/3.13.0/themes/black.js" ></script>
+    </head>
+	<body style="background-color:#222222;">
+		
+        <script type="text/javascript">
+           
+		    function Get(yourUrl){
+                var Httpreq = new XMLHttpRequest();
+                Httpreq.open("GET",yourUrl,false);
+                Httpreq.send(null);
+                return Httpreq.responseText;          
+            }
+
+            var json_obj = JSON.parse(Get('http://api.dronestre.am/data'));
+			mapData = json_obj.strike;
+
+			var map;
+			var minBulletSize = 10;
+			var maxBulletSize = 70;
+			var min = Infinity;
+			var max = -Infinity;
+
+			AmCharts.theme = AmCharts.themes.black;
+
+			// get min and max values
+			for (var i = 0; i < mapData.length; i++) {
+				var value = parseInt(mapData[i].deaths_min);
+				if (value < min) {
+					min = value;
+				}
+				if (value > max) {
+					max = value;
+				}
+			}
+			// build map
+			AmCharts.ready(function() {
+				map = new AmCharts.AmMap();
+				map.projection = "winkel3";
+				map.pathToImages = "https://cdnjs.cloudflare.com/ajax/libs/ammaps/3.13.0/images/";
+
+				map.addTitle("Real-time and historical data about every reported covert United States drone strike", 14);
+				map.addTitle("source: http://dronestre.am", 11);
+				map.areasSettings = {
+					unlistedAreasColor: "#FFFFFF",
+					unlistedAreasAlpha: 0.1
+				};
+				map.imagesSettings = {
+					balloonText: "<span style='font-size:14px;'><b>[[title]]</b></span>",
+					alpha: 0.6
+				}
+
+				var dataProvider = {
+					mapVar: AmCharts.maps.worldLow,
+					images: []
+				}
+
+				var maxSquare = maxBulletSize * maxBulletSize * 2 * Math.PI;
+				var minSquare = minBulletSize * minBulletSize * 2 * Math.PI;
+
+				// create circle for each drone strike
+				for (var i = 0; i < mapData.length; i++) {
+					var dataItem = mapData[i];
+			
+					if(dataItem.lon && dataItem.lat) {
+						var value = parseInt(dataItem.deaths_min);
+						// calculate size of a bubble
+						var square = (value - min) / (max - min) * (maxSquare - minSquare) + minSquare;
+						if (square < minSquare) {
+							square = minSquare;
+						}
+						var size = Math.sqrt(square / (Math.PI * 2));
+						
+						color = "#EEA638";
+						if(parseInt(dataItem.children) > 0)
+							color = "#DE4C4F";
+
+						dataProvider.images.push({
+							type: "circle",
+							width: size,
+							height: size,
+							color: color,
+							longitude: dataItem.lon,
+							latitude: dataItem.lat,
+							title: dataItem.narrative
+						});
+					}
+				}
+
+				map.dataProvider = dataProvider;
+				
+
+				map.write("mapdiv");
+			});
+		</script>
+
+        <div id="mapdiv" style="width: 100%; height: 100%;"></div>
+    </body>
+
+</html>
