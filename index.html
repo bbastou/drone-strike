@@ -18,7 +18,10 @@
                 return Httpreq.responseText;          
             }
 
-            var json_obj = JSON.parse(Get('http://api.dronestre.am/data'));
+	  // Access-Control-Allow-Origin issue
+          //  var json_obj = JSON.parse(Get('http://api.dronestre.am/data'));
+	  // Data seem's to not be updated since november 2017, so I add a localy json file
+	var json_obj = JSON.parse(Get('/data.json'));
 			mapData = json_obj.strike;
 
 			var map;
